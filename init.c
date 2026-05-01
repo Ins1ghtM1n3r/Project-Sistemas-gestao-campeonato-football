@@ -1,12 +1,13 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <locale.h>
+#include <stdlib.h>
 
-#define MAX_EQUIPAS 20
+#define MAX_EQUIPES 20
 #define MAX_JOGADORES 30
 #define MAX_CAMPEONATOS 10
 #define MAX_PARTIDAS 100
+#define MAX_GOLEADORES 10
 
 typedef struct {
     char nome[50];
@@ -25,389 +26,443 @@ typedef struct {
     int num_jogadores;
     int pontos;
     int vitorias;
-    int gols;
-} Equipa;
+    int empates;
+    int derrotas;
+    int gols_marcados;
+    int gols_sofridos;
+} Equipe;
 
 typedef struct {
     char nome[50];
     int ano;
-    Equipa* equipas[MAX_EQUIPAS];
-    int num_equipas;
-    Equipa* campeao;
-    Equipa* vice_campeao;
-    Equipa* terceiro_colocado;
+    char equipes[MAX_EQUIPES][50];
+    int num_equipes;
 } Campeonato;
 
 typedef struct {
-    Equipa* equipa1;
-    Equipa* equipa2;
-    int gols_equipa1;
-    int gols_equipa2;
+    char equipe1[50];
+    char equipe2[50];
+    int gols_equipe1;
+    int gols_equipe2;
+    char campeonato[50];
     char data[20];
-    char marcadores[100]; 
+    char goleadores1[MAX_GOLEADORES][50];
+    char goleadores2[MAX_GOLEADORES][50];
+    int tempos_gols1[MAX_GOLEADORES];
+    int tempos_gols2[MAX_GOLEADORES];
+    int num_goleadores1;
+    int num_goleadores2;
 } Partida;
 
-Equipa equipas[MAX_EQUIPAS];
+Equipe equipes[MAX_EQUIPES];
 Campeonato campeonatos[MAX_CAMPEONATOS];
 Partida partidas[MAX_PARTIDAS];
-int num_equipas = 0;
+int num_equipes = 0;
 int num_campeonatos = 0;
 int num_partidas = 0;
 
-void salvarDados() {
-    FILE *file = fopen("dados.bin", "wb");
+void salvar_dados() {
+    system("cls");
+    FILE *file = fopen("dados.txt", "w");
     if (file == NULL) {
-        printf("Erro ao abrir o arquivo para salvar os dados.\n");
+        printf("Erro ao abrir o arquivo para escrita.\n");
         return;
     }
-    fwrite(&num_equipas, sizeof(int), 1, file);
-    fwrite(equipas, sizeof(Equipa), num_equipas, file);
-    fwrite(&num_campeonatos, sizeof(int), 1, file);
-    fwrite(campeonatos, sizeof(Campeonato), num_campeonatos, file);
-    fwrite(&num_partidas, sizeof(int), 1, file);
-    fwrite(partidas, sizeof(Partida), num_partidas, file);
-    fclose(file);
-}
 
-void carregarDados() {
-    FILE *file = fopen("dados.bin", "rb");
-    if (file == NULL) {
-        printf("Erro ao abrir o arquivo para carregar os dados.\n");
-        return;
-    }
-    fread(&num_equipas, sizeof(int), 1, file);
-    fread(equipas, sizeof(Equipa), num_equipas, file);
-    fread(&num_campeonatos, sizeof(int), 1, file);
-    fread(campeonatos, sizeof(Campeonato), num_campeonatos, file);
-    fread(&num_partidas, sizeof(int), 1, file);
-    fread(partidas, sizeof(Partida), num_partidas, file);
-    fclose(file);
-}
-
-void cadastrarEquipa() {
-    if (num_equipas >= MAX_EQUIPAS) {
-        printf("Número máximo de equipas atingido.\n");
-        return;
-    }
-    Equipa e;
-    printf("Nome da equipa: ");
-    scanf("%[\n]s", e.nome);
-    fflush(stdin);
-    printf("Cidade: ");
-    scanf("%[\n]s", e.cidade);
-    fflush(stdin);
-    printf("Ano de fundação: ");
-    scanf("%d", &e.ano_fundacao);
-    fflush(stdin);
-    printf("Nome do treinador: ");
-    scanf("%[\n]s", e.treinador);
-    fflush(stdin);
-    e.num_jogadores = 0;
-    e.pontos = 0;
-    e.vitorias = 0;
-    e.gols = 0;
-    equipas[num_equipas++] = e;
-    salvarDados();
-    printf("Equipa cadastrada com sucesso!\n");
-}
-
-void cadastrarJogador() {
-    if (num_equipas == 0) {
-        printf("Nenhuma equipa cadastrada.\n");
-        return;
-    }
-    
-    char nome_equipa[100];
-    printf("Nome da equipa: ");
-    scanf("%s", nome_equipa);
-    
-    int equipa_index = -1;
-    for (int i = 0; i < num_equipas; ++i) {
-        if (strcmp(equipas[i].nome, nome_equipa) == 0) {
-            equipa_index = i;
-            break;
+    fprintf(file, "%d\n", num_equipes);
+    for (int i = 0; i < num_equipes; i++) {
+        fprintf(file, "%s\n%s\n%d\n%s\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n", equipes[i].nome, equipes[i].cidade, equipes[i].ano_fundacao, equipes[i].treinador, equipes[i].num_jogadores, equipes[i].pontos, equipes[i].vitorias, equipes[i].empates, equipes[i].derrotas, equipes[i].gols_marcados, equipes[i].gols_sofridos);
+        for (int j = 0; j < equipes[i].num_jogadores; j++) {
+            fprintf(file, "%s\n%d\n%d\n%s\n%d\n", equipes[i].jogadores[j].nome, equipes[i].jogadores[j].idade, equipes[i].jogadores[j].numero_camisa, equipes[i].jogadores[j].posicao, equipes[i].jogadores[j].gols);
         }
     }
-    
-    if (equipa_index == -1) {
-        printf("Equipa inválida.\n");
-        return;
+
+    fprintf(file, "%d\n", num_campeonatos);
+    for (int i = 0; i < num_campeonatos; i++) {
+        fprintf(file, "%s\n", campeonatos[i].nome);
+        fprintf(file, "%d\n", campeonatos[i].ano);
+        fprintf(file, "%d\n", campeonatos[i].num_equipes);
+        for (int j = 0; j < campeonatos[i].num_equipes; j++) {
+            fprintf(file, "%s\n", campeonatos[i].equipes[j]);
+        }
     }
-    
-    Equipa* e = &equipas[equipa_index];
-    if (e->num_jogadores >= MAX_JOGADORES) {
-        printf("Número máximo de jogadores atingido.\n");
-        return;
+
+    fprintf(file, "%d\n", num_partidas);
+    for (int i = 0; i < num_partidas; i++) {
+        fprintf(file, "%s\n%s\n%s\n%d\n%d\n%s\n%d\n", partidas[i].campeonato, partidas[i].equipe1, partidas[i].equipe2, partidas[i].gols_equipe1, partidas[i].gols_equipe2, partidas[i].data, partidas[i].num_goleadores1);
+        for (int j = 0; j < partidas[i].num_goleadores1; j++) {
+            fprintf(file, "%s\n", partidas[i].goleadores1[j]);
+        }
+        fprintf(file, "%d\n", partidas[i].num_goleadores2);
+        for (int j = 0; j < partidas[i].num_goleadores2; j++) {
+            fprintf(file, "%s\n", partidas[i].goleadores2[j]);
+        }
     }
-    
-    Jogador j;
-    printf("Nome do jogador: ");
-    scanf("%s", j.nome);
-    printf("Idade: ");
-    scanf("%d", &j.idade);
-    if (j.idade < 16 || j.idade > 40) {
-        printf("Idade inválida.\n");
-        return;
-    }
-    printf("Número da camisa: ");
-    scanf("%d", &j.numero_camisa);
-    printf("Posição: ");
-    scanf("%s", j.posicao);
-    j.gols = 0;
-    
-    e->jogadores[e->num_jogadores++] = j;
-    salvarDados();
-    printf("Jogador cadastrado com sucesso!\n");
+
+    fclose(file);
 }
 
-void cadastrarCampeonato() {
+void carregar_dados() {
+    system("cls");
+    FILE *file = fopen("dados.txt", "r");
+    if (file == NULL) {
+        printf("Erro ao abrir o arquivo para leitura.\n");
+        return;
+    }
+
+    fscanf(file, "%d\n", &num_equipes);
+    for (int i = 0; i < num_equipes; i++) {
+        fscanf(file, "%[^\n]\n%[^\n]\n%d\n%[^\n]\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n", equipes[i].nome, equipes[i].cidade, &equipes[i].ano_fundacao, equipes[i].treinador, &equipes[i].num_jogadores, &equipes[i].pontos, &equipes[i].vitorias, &equipes[i].empates, &equipes[i].derrotas, &equipes[i].gols_marcados, &equipes[i].gols_sofridos);
+        for (int j = 0; j < equipes[i].num_jogadores; j++) {
+            fscanf(file, "%[^\n]\n%d\n%d\n%[^\n]\n%d\n", equipes[i].jogadores[j].nome, &equipes[i].jogadores[j].idade, &equipes[i].jogadores[j].numero_camisa, equipes[i].jogadores[j].posicao, &equipes[i].jogadores[j].gols);
+        }
+    }
+
+    fscanf(file, "%d\n", &num_campeonatos);
+    for (int i = 0; i < num_campeonatos; i++) {
+        fscanf(file, "%[^\n]\n", campeonatos[i].nome);
+        fscanf(file, "%d\n", &campeonatos[i].ano);
+        fscanf(file, "%d\n", &campeonatos[i].num_equipes);
+        for (int j = 0; j < campeonatos[i].num_equipes; j++) {
+            fscanf(file, "%[^\n]\n", campeonatos[i].equipes[j]);
+        }
+    }
+
+    fscanf(file, "%d\n", &num_partidas);
+    for (int i = 0; i < num_partidas; i++) {
+        fscanf(file, "%[^\n]\n%[^\n]\n%[^\n]\n%d\n%d\n%[^\n]\n%d\n", partidas[i].campeonato, partidas[i].equipe1, partidas[i].equipe2, &partidas[i].gols_equipe1, &partidas[i].gols_equipe2, partidas[i].data, &partidas[i].num_goleadores1);
+        for (int j = 0; j < partidas[i].num_goleadores1; j++) {
+            fscanf(file, "%[^\n]\n", partidas[i].goleadores1[j]);
+        }
+        fscanf(file, "%d\n", &partidas[i].num_goleadores2);
+        for (int j = 0; j < partidas[i].num_goleadores2; j++) {
+            fscanf(file, "%[^\n]\n", partidas[i].goleadores2[j]);
+        }
+    }
+
+    fclose(file);
+}
+
+void cadastrar_equipe() {
+    system("cls");
+    if (num_equipes >= MAX_EQUIPES) {
+        printf("Número máximo de equipes atingido.\n");
+        return;
+    }
+    printf("Nome da equipe: ");
+    fflush(stdin);
+    scanf(" %[^\n]", equipes[num_equipes].nome);
+    printf("Cidade: ");
+    fflush(stdin);
+    scanf(" %[^\n]", equipes[num_equipes].cidade);
+    printf("Ano de fundação: ");
+    fflush(stdin);
+    scanf("%d", &equipes[num_equipes].ano_fundacao);
+    printf("Nome do treinador: ");
+    fflush(stdin);
+    scanf(" %[^\n]", equipes[num_equipes].treinador);
+    equipes[num_equipes].num_jogadores = 0;
+    equipes[num_equipes].pontos = 0;
+    equipes[num_equipes].vitorias = 0;
+    equipes[num_equipes].empates = 0;
+    equipes[num_equipes].derrotas = 0;
+    equipes[num_equipes].gols_marcados = 0;
+    equipes[num_equipes].gols_sofridos = 0;
+    num_equipes++;
+    salvar_dados();
+}
+
+void cadastrar_jogador() {
+    system("cls");
+    char nome_equipe[50];
+    printf("Nome da equipe: ");
+    fflush(stdin);
+    scanf(" %[^\n]", nome_equipe);
+    for (int i = 0; i < num_equipes; i++) {
+        if (strcmp(equipes[i].nome, nome_equipe) == 0) {
+            if (equipes[i].num_jogadores >= MAX_JOGADORES) {
+                printf("Número máximo de jogadores atingido.\n");
+                return;
+            }
+            Jogador *jogador = &equipes[i].jogadores[equipes[i].num_jogadores];
+            printf("Nome do jogador: ");
+            fflush(stdin);
+            scanf(" %[^\n]", jogador->nome);
+            printf("Idade: ");
+            fflush(stdin);
+            scanf("%d", &jogador->idade);
+            if (jogador->idade < 16 || jogador->idade > 40) {
+                printf("Idade inválida. Deve ser entre 16 e 40 anos.\n");
+                return;
+            }
+            printf("Número da camisa: ");
+            fflush(stdin);
+            scanf("%d", &jogador->numero_camisa);
+            printf("Posição: ");
+            fflush(stdin);
+            scanf(" %[^\n]", jogador->posicao);
+            jogador->gols = 0;
+            equipes[i].num_jogadores++;
+            salvar_dados();
+            return;
+        }
+    }
+    printf("Equipe não encontrada.\n");
+}
+
+void cadastrar_campeonato() {
+    // system("cls"); // Removido para compatibilidade com diferentes sistemas operacionais
     if (num_campeonatos >= MAX_CAMPEONATOS) {
         printf("Número máximo de campeonatos atingido.\n");
         return;
     }
-    Campeonato c;
     printf("Nome do campeonato: ");
-    scanf("%[\n]s", c.nome);
     fflush(stdin);
+    scanf(" %[^\n]", campeonatos[num_campeonatos].nome);
     printf("Ano de realização: ");
-    scanf("%d", &c.ano);
     fflush(stdin);
-    c.num_equipas = 0;
-    c.campeao = NULL;
-    c.vice_campeao = NULL;
-    c.terceiro_colocado = NULL;
-    campeonatos[num_campeonatos++] = c;
-    salvarDados();
-    printf("Campeonato cadastrado com sucesso!\n");
-}
+    scanf("%d", &campeonatos[num_campeonatos].ano);
 
-void registrarPartida() {
-    if (num_campeonatos == 0) {
-        printf("Nenhum campeonato cadastrado.\n");
-        return;
-    }
-    
-    char nome_campeonato[100];
-    printf("Nome do campeonato: ");
-    scanf("%s", nome_campeonato);
-    
-    int campeonato_index = -1;
-    for (int i = 0; i < num_campeonatos; ++i) {
-        if (strcmp(campeonatos[i].nome, nome_campeonato) == 0) {
-            campeonato_index = i;
+    campeonatos[num_campeonatos].num_equipes = 0;
+
+    // Inscrever equipes já cadastradas
+    char opcao;
+    do {
+        if (campeonatos[num_campeonatos].num_equipes >= MAX_EQUIPES) {
+            printf("Número máximo de equipes atingido para este campeonato.\n");
             break;
         }
+        printf("Deseja inscrever uma equipe já cadastrada? (s/n): ");
+        fflush(stdin);
+        scanf(" %c", &opcao);
+        if (opcao == 's' || opcao == 'S') {
+            char nome_equipe[50];
+            printf("Nome da equipe: ");
+            fflush(stdin);
+            scanf(" %[^\n]", nome_equipe);
+
+            int equipe_encontrada = 0;
+            for (int i = 0; i < num_equipes; i++) {
+                if (strcmp(equipes[i].nome, nome_equipe) == 0) {
+                    strcpy(campeonatos[num_campeonatos].equipes[campeonatos[num_campeonatos].num_equipes], nome_equipe);
+                    campeonatos[num_campeonatos].num_equipes++;
+                    equipe_encontrada = 1;
+                    break;
+                }
+            }
+            if (!equipe_encontrada) {
+                printf("Equipe não encontrada.\n");
+            }
+        }
+    } while (opcao == 's' || opcao == 'S');
+
+    num_campeonatos++;
+    salvar_dados();
+}
+
+int equipe_esta_no_campeonato(char *nome_campeonato, char *nome_equipe) {
+    for (int i = 0; i < num_campeonatos; i++) {
+        if (strcmp(campeonatos[i].nome, nome_campeonato) == 0) {
+            for (int j = 0; j < campeonatos[i].num_equipes; j++) {
+                if (strcmp(campeonatos[i].equipes[j], nome_equipe) == 0) {
+                    return 1;
+                }
+            }
+        }
     }
-    
-    if (campeonato_index == -1) {
-        printf("Campeonato inválido.\n");
-        return;
-    }
-    
+    return 0;
+}
+
+void registrar_partida() {
+     system("cls"); 
     if (num_partidas >= MAX_PARTIDAS) {
         printf("Número máximo de partidas atingido.\n");
         return;
     }
-    
-    Partida p;
-    char nome_equipa1[100], nome_equipa2[100];
-    
-    printf("Nome da primeira equipa: ");
-    scanf("%s", nome_equipa1);
-    printf("Nome da segunda equipa: ");
-    scanf("%s", nome_equipa2);
-    
-    int equipa1_index = -1, equipa2_index = -1;
-    for (int i = 0; i < num_equipas; ++i) {
-        if (strcmp(equipas[i].nome, nome_equipa1) == 0) {
-            equipa1_index = i;
-        }
-        if (strcmp(equipas[i].nome, nome_equipa2) == 0) {
-            equipa2_index = i;
-        }
-    }
-    
-    if (equipa1_index == -1 || equipa2_index == -1) {
-        printf("Equipa inválida.\n");
+    printf("Nome do campeonato: ");
+    fflush(stdin);
+    scanf(" %[^\n]", partidas[num_partidas].campeonato);
+
+    printf("Equipe 1: ");
+    fflush(stdin);
+    scanf(" %[^\n]", partidas[num_partidas].equipe1);
+    if (!equipe_esta_no_campeonato(partidas[num_partidas].campeonato, partidas[num_partidas].equipe1)) {
+        printf("Equipe 1 não está cadastrada no campeonato '%s'.\n", partidas[num_partidas].campeonato);
         return;
     }
-    
-    p.equipa1 = &equipas[equipa1_index];
-    p.equipa2 = &equipas[equipa2_index];
-    printf("Data da partida (dd/mm/aaaa): ");
-    scanf("%s", p.data);
-    printf("Gols da primeira equipa: ");
-    scanf("%d", &p.gols_equipa1);
-    printf("Gols da segunda equipa: ");
-    scanf("%d", &p.gols_equipa2);
-    
-    // Registrar gols dos jogadores
-    for (int i = 0; i < p.gols_equipa1; i++) {
-        char nome_jogador[50];
-        printf("Nome do jogador da equipa 1 que marcou o gol %d: ", i + 1);
-        scanf("%s", nome_jogador);
-        for (int j = 0; j < p.equipa1->num_jogadores; j++) {
-            if (strcmp(p.equipa1->jogadores[j].nome, nome_jogador) == 0) {
-                p.equipa1->jogadores[j].gols++;
-                break;
+
+    printf("Equipe 2: ");
+    fflush(stdin);
+    scanf(" %[^\n]", partidas[num_partidas].equipe2);
+    if (!equipe_esta_no_campeonato(partidas[num_partidas].campeonato, partidas[num_partidas].equipe2)) {
+        printf("Equipe 2 não está cadastrada no campeonato '%s'.\n", partidas[num_partidas].campeonato);
+        return;
+    }
+
+    printf("Gols da equipe 1: ");
+    fflush(stdin);
+    scanf("%d", &partidas[num_partidas].gols_equipe1);
+    printf("Gols da equipe 2: ");
+    fflush(stdin);
+    scanf("%d", &partidas[num_partidas].gols_equipe2);
+    printf("Data da partida: ");
+    fflush(stdin);
+    scanf(" %[^\n]", partidas[num_partidas].data);
+
+    // Registrar goleadores da equipe 1
+    printf("Número de goleadores da equipe 1: ");
+    fflush(stdin);
+    scanf("%d", &partidas[num_partidas].num_goleadores1);
+    for (int i = 0; i < partidas[num_partidas].num_goleadores1; i++) {
+        printf("Nome do goleador %d da equipe 1: ", i + 1);
+        fflush(stdin);
+        scanf(" %[^\n]", partidas[num_partidas].goleadores1[i]);
+        printf("Tempo do gol do goleador %d da equipe 1 (em minutos): ", i + 1);
+        fflush(stdin);
+        scanf("%d", &partidas[num_partidas].tempos_gols1[i]);
+        // Atualizar gols do jogador
+        for (int j = 0; j < num_equipes; j++) {
+            if (strcmp(equipes[j].nome, partidas[num_partidas].equipe1) == 0) {
+                for (int k = 0; k < equipes[j].num_jogadores; k++) {
+                    if (strcmp(equipes[j].jogadores[k].nome, partidas[num_partidas].goleadores1[i]) == 0) {
+                        equipes[j].jogadores[k].gols++;
+                    }
+                }
             }
         }
     }
 
-    for (int i = 0; i < p.gols_equipa2; i++) {
-        char nome_jogador[50];
-        printf("Nome do jogador da equipa 2 que marcou o gol %d: ", i + 1);
-        scanf("%s", nome_jogador);
-        for (int j = 0; j < p.equipa2->num_jogadores; j++) {
-            if (strcmp(p.equipa2->jogadores[j].nome, nome_jogador) == 0) {
-                p.equipa2->jogadores[j].gols++;
-                break;
+    // Registrar goleadores da equipe 2
+    printf("Número de goleadores da equipe 2: ");
+    fflush(stdin);
+    scanf("%d", &partidas[num_partidas].num_goleadores2);
+    for (int i = 0; i < partidas[num_partidas].num_goleadores2; i++) {
+        printf("Nome do goleador %d da equipe 2: ", i + 1);
+        fflush(stdin);
+        scanf(" %[^\n]", partidas[num_partidas].goleadores2[i]);
+        printf("Tempo do gol do goleador %d da equipe 2 (em minutos): ", i + 1);
+        fflush(stdin);
+        scanf("%d", &partidas[num_partidas].tempos_gols2[i]);
+        // Atualizar gols do jogador
+        for (int j = 0; j < num_equipes; j++) {
+            if (strcmp(equipes[j].nome, partidas[num_partidas].equipe2) == 0) {
+                for (int k = 0; k < equipes[j].num_jogadores; k++) {
+                    if (strcmp(equipes[j].jogadores[k].nome, partidas[num_partidas].goleadores2[i]) == 0) {
+                        equipes[j].jogadores[k].gols++;
+                    }
+                }
             }
         }
     }
-    
-    partidas[num_partidas++] = p;
-    
-    // Atualizar estatísticas das equipas
-    p.equipa1->gols += p.gols_equipa1;
-    p.equipa2->gols += p.gols_equipa2;
-    if (p.gols_equipa1 > p.gols_equipa2) {
-        p.equipa1->vitorias++;
-        p.equipa1->pontos += 3;
-    } else if (p.gols_equipa2 > p.gols_equipa1) {
-        p.equipa2->vitorias++;
-        p.equipa2->pontos += 3;
-    } else {
-        p.equipa1->pontos++;
-        p.equipa2->pontos++;
-    }
 
-    salvarDados();
-    printf("Partida registrada com sucesso!\n");
-}
-
-void editarEquipa() {
-    system("cls");
-    if (num_equipas == 0) {
-        printf("Nenhuma equipa cadastrada.\n");
-        return;
-    }
-    
-    char nome_equipa[100];
-    printf("Nome da equipa: ");
-    scanf("%s", nome_equipa);
-    
-    int equipa_index = -1;
-    for (int i = 0; i < num_equipas; ++i) {
-        if (strcmp(equipas[i].nome, nome_equipa) == 0) {
-            equipa_index = i;
-            break;
+    // Atualizar estatísticas das equipes
+    for (int i = 0; i < num_equipes; i++) {
+        if (strcmp(equipes[i].nome, partidas[num_partidas].equipe1) == 0) {
+            equipes[i].gols_marcados += partidas[num_partidas].gols_equipe1;
+            equipes[i].gols_sofridos += partidas[num_partidas].gols_equipe2;
+            if (partidas[num_partidas].gols_equipe1 > partidas[num_partidas].gols_equipe2) {
+                equipes[i].vitorias++;
+                equipes[i].pontos += 3;
+            } else if (partidas[num_partidas].gols_equipe1 == partidas[num_partidas].gols_equipe2) {
+                equipes[i].empates++;
+                equipes[i].pontos += 1;
+            } else {
+                equipes[i].derrotas++;
+            }
+        }
+        if (strcmp(equipes[i].nome, partidas[num_partidas].equipe2) == 0) {
+            equipes[i].gols_marcados += partidas[num_partidas].gols_equipe2;
+            equipes[i].gols_sofridos += partidas[num_partidas].gols_equipe1;
+            if (partidas[num_partidas].gols_equipe2 > partidas[num_partidas].gols_equipe1) {
+                equipes[i].vitorias++;
+                equipes[i].pontos += 3;
+            } else if (partidas[num_partidas].gols_equipe2 == partidas[num_partidas].gols_equipe1) {
+                equipes[i].empates++;
+                equipes[i].pontos += 1;
+            } else {
+                equipes[i].derrotas++;
+            }
         }
     }
-    
-    if (equipa_index == -1) {
-        printf("Equipa inválida.\n");
-        return;
+
+    num_partidas++;
+    salvar_dados();
+}
+void listar_partidas() {
+     system("cls"); 
+    for (int i = 0; i < num_partidas; i++) {
+        printf("--------------------------------------------------\n");
+        printf("| Campeonato: %s\n", partidas[i].campeonato);
+        printf("| Equipe 1: %s\n", partidas[i].equipe1);
+        printf("| Equipe 2: %s\n", partidas[i].equipe2);
+        printf("| Placar: %d - %d\n", partidas[i].gols_equipe1, partidas[i].gols_equipe2);
+        printf("| Data: %s\n", partidas[i].data);
+        printf("| Goleadores da equipe 1:\n");
+        for (int j = 0; j < partidas[i].num_goleadores1; j++) {
+            printf("|   %s (Tempo: %d minutos)\n", partidas[i].goleadores1[j], partidas[i].tempos_gols1[j]);
+        }
+        printf("| Goleadores da equipe 2:\n");
+        for (int j = 0; j < partidas[i].num_goleadores2; j++) {
+            printf("|   %s (Tempo: %d minutos)\n", partidas[i].goleadores2[j], partidas[i].tempos_gols2[j]);
+        }
+        printf("--------------------------------------------------\n");
     }
-    
-    Equipa* e = &equipas[equipa_index];
-    printf("Novo nome da equipa: ");
-    scanf("%s", e->nome);
-    printf("Nova cidade: ");
-    scanf("%s", e->cidade);
-    printf("Novo ano de fundação: ");
-    scanf("%d", &e->ano_fundacao);
-    printf("Novo nome do treinador: ");
-    scanf("%s", e->treinador);
-    salvarDados();
-    printf("Equipa editada com sucesso!\n");
 }
 
-void editarJogador() {
-    system("cls");
-    if (num_equipas == 0) {
-        printf("Nenhuma equipa cadastrada.\n");
-        return;
+void tabela_classificativa() {
+    // Ordenar equipes por pontos
+    for (int i = 0; i < num_equipes - 1; i++) {
+        for (int j = i + 1; j < num_equipes; j++) {
+            if (equipes[j].pontos > equipes[i].pontos) {
+                Equipe temp = equipes[i];
+                equipes[i] = equipes[j];
+                equipes[j] = temp;
+            }
+        }
     }
-    int equipa_index;
-    printf("Selecione a equipa do jogador (0 a %d): ", num_equipas - 1);
-    scanf("%d", &equipa_index);
-    fflush(stdin);
-    if (equipa_index < 0 || equipa_index >= num_equipas) {
-        printf("Equipa inválida.\n");
-        return;
+
+    // Exibir tabela classificativa
+    printf("Tabela Classificativa:\n");
+    printf("%-10s %-20s %-10s %-10s %-10s %-10s %-15s %-15s\n", "Posição", "Equipe", "Pontos", "Vitórias", "Empates", "Derrotas", "Gols Marcados", "Gols Sofridos");
+    for (int i = 0; i < num_equipes; i++) {
+        printf("%-10d %-20s %-10d %-10d %-10d %-10d %-15d %-15d\n", i + 1, equipes[i].nome, equipes[i].pontos, equipes[i].vitorias, equipes[i].empates, equipes[i].derrotas, equipes[i].gols_marcados, equipes[i].gols_sofridos);
     }
-    Equipa* e = &equipas[equipa_index];
-    if (e->num_jogadores == 0) {
-        printf("Nenhum jogador cadastrado nesta equipa.\n");
-        return;
-    }
-    int jogador_index;
-    printf("Selecione o jogador para editar (0 a %d): ", e->num_jogadores - 1);
-    scanf("%d", &jogador_index);
-    fflush(stdin);
-    if (jogador_index < 0 || jogador_index >= e->num_jogadores) {
-        printf("Jogador inválido.\n");
-        return;
-    }
-    Jogador* j = &e->jogadores[jogador_index];
-    printf("Novo nome do jogador: ");
-    scanf("%[\n]s", j->nome);
-    fflush(stdin);
-    printf("Nova idade: ");
-    scanf("%d", &j->idade);
-    fflush(stdin);
-    printf("Novo número da camisa: ");
-    scanf("%d", &j->numero_camisa);
-    fflush(stdin);
-    printf("Nova posição: ");
-    scanf("%[\n]s", j->posicao);
-    fflush(stdin);
-    salvarDados();
-    printf("Jogador editado com sucesso!\n");
 }
 
-void exibirTabelaClassificacao(Campeonato* c) {
+void pesquisar_equipe() {
     system("cls");
-    printf("\nTabela de Classificação do Campeonato %s (%d)\n", c->nome, c->ano);
-    printf("------------------------------------------------------------\n");
-    printf("| %-20s | %-10s | %-10s | %-10s |\n", "Equipa", "Pontos", "Vitórias", "Gols");
-    printf("------------------------------------------------------------\n");
-    for (int i = 0; i < c->num_equipas; i++) {
-        Equipa* e = c->equipas[i];
-        printf("| %-20s | %-10d | %-10d | %-10d |\n", e->nome, e->pontos, e->vitorias, e->gols);
-    }
-    printf("------------------------------------------------------------\n");
-}
-
-void pesquisarEquipa() {
-    system("cls");
-    char nome[50];
-    printf("Digite o nome da equipa: ");
-    scanf("%[\n]s", nome);
+    char nome_equipe[50];
+    printf("Nome da equipe: ");
     fflush(stdin);
-    for (int i = 0; i < num_equipas; i++) {
-        if (strcmp(equipas[i].nome, nome) == 0) {
-            printf("Equipa encontrada: %s, Cidade: %s, Ano de Fundação: %d, Treinador: %s\n",
-                   equipas[i].nome, equipas[i].cidade, equipas[i].ano_fundacao, equipas[i].treinador);
+    scanf(" %[^\n]", nome_equipe);
+    for (int i = 0; i < num_equipes; i++) {
+        if (strcmp(equipes[i].nome, nome_equipe) == 0) {
+            printf("Equipe encontrada:\n");
+            printf("Nome: %s\n", equipes[i].nome);
+            printf("Cidade: %s\n", equipes[i].cidade);
+                     printf("Ano de fundação: %d\n", equipes[i].ano_fundacao);
+            printf("Treinador: %s\n", equipes[i].treinador);
             return;
         }
     }
-    printf("Equipa não encontrada.\n");
+    printf("Equipe não encontrada.\n");
 }
 
-void pesquisarJogador() {
+void pesquisar_jogador() {
     system("cls");
-    char nome[50];
-    printf("Digite o nome do jogador: ");
-    scanf("%[\n]s", nome);
+    char nome_jogador[50];
+    printf("Nome do jogador: ");
     fflush(stdin);
-    for (int i = 0; i < num_equipas; i++) {
-        for (int j = 0; j < equipas[i].num_jogadores; j++) {
-            if (strcmp(equipas[i].jogadores[j].nome, nome) == 0) {
-                printf("Jogador encontrado: %s, Idade: %d, Número da Camisa: %d, Posição: %s, Gols: %d\n",
-                       equipas[i].jogadores[j].nome, equipas[i].jogadores[j].idade, equipas[i].jogadores[j].numero_camisa,
-                       equipas[i].jogadores[j].posicao, equipas[i].jogadores[j].gols);
+    scanf(" %[^\n]", nome_jogador);
+    for (int i = 0; i < num_equipes; i++) {
+        for (int j = 0; j < equipes[i].num_jogadores; j++) {
+            if (strcmp(equipes[i].jogadores[j].nome, nome_jogador) == 0) {
+                printf("Jogador encontrado:\n");
+                printf("Nome: %s\n", equipes[i].jogadores[j].nome);
+                printf("Idade: %d\n", equipes[i].jogadores[j].idade);
+                printf("Número da camisa: %d\n", equipes[i].jogadores[j].numero_camisa);
+                printf("Posição: %s\n", equipes[i].jogadores[j].posicao);
+                printf("Equipe: %s\n", equipes[i].nome);
                 return;
             }
         }
@@ -415,272 +470,310 @@ void pesquisarJogador() {
     printf("Jogador não encontrado.\n");
 }
 
-void mostrarEstatisticas(Campeonato* c) {
+void pesquisar_campeonato() {
     system("cls");
-    printf("\nEstatísticas das Equipas no Campeonato %s (%d)\n", c->nome, c->ano);
-    printf("------------------------------------------------------------\n");
-    printf("| %-20s | %-10s | %-10s | %-10s |\n", "Equipa", "Pontos", "Vitórias", "Gols");
-    printf("------------------------------------------------------------\n");
-    for (int i = 0; i < c->num_equipas; i++) {
-        Equipa* e = c->equipas[i];
-        printf("| %-20s | %-10d | %-10d | %-10d |\n", e->nome, e->pontos, e->vitorias, e->gols);
-    }
-    printf("------------------------------------------------------------\n");
-}
-
-void listarEquipasCampeonato(Campeonato* c) {
-    system("cls");
-    printf("\nEquipas do Campeonato %s (%d)\n", c->nome, c->ano);
-    printf("------------------------------------------------------------\n");
-    for (int i = 0; i < c->num_equipas; i++) {
-        Equipa* e = c->equipas[i];
-        printf("Equipa: %s, Cidade: %s, Ano de Fundação: %d, Treinador: %s\n",
-               e->nome, e->cidade, e->ano_fundacao, e->treinador);
-    }
-    printf("------------------------------------------------------------\n");
-}
-
-void listarJogadoresEquipa(Equipa* e) {
-    system("cls");
-    printf("\nJogadores da Equipa %s\n", e->nome);
-    printf("------------------------------------------------------------\n");
-    for (int i = 0; i < e->num_jogadores; i++) {
-        Jogador* j = &e->jogadores[i];
-        printf("Nome: %s, Idade: %d, Número da Camisa: %d, Posição: %s, Gols: %d\n",
-               j->nome, j->idade, j->numero_camisa, j->posicao, j->gols);
-    }
-    printf("------------------------------------------------------------\n");
-}
-
-void listarJogosEquipa(Equipa* e) {
-    system("cls");
-    printf("\nJogos da Equipa %s\n", e->nome);
-    printf("------------------------------------------------------------\n");
-    for (int i = 0; i < num_partidas; i++) {
-        Partida* p = &partidas[i];
-        if (p->equipa1 == e || p->equipa2 == e) {
-            printf("Data: %s, Equipa 1: %s, Equipa 2: %s, Placar: %d - %d, Marcadores: %s\n",
-                   p->data, p->equipa1->nome, p->equipa2->nome, p->gols_equipa1, p->gols_equipa2, p->marcadores);
+    char nome_campeonato[50];
+    printf("Nome do campeonato: ");
+    fflush(stdin);
+    scanf(" %[^\n]", nome_campeonato);
+    for (int i = 0; i < num_campeonatos; i++) {
+        if (strcmp(campeonatos[i].nome, nome_campeonato) == 0) {
+            printf("Campeonato encontrado:\n");
+            printf("Nome: %s\n", campeonatos[i].nome);
+            printf("Ano: %d\n", campeonatos[i].ano);
+            return;
         }
     }
-    printf("------------------------------------------------------------\n");
+    printf("Campeonato não encontrado.\n");
 }
 
-void listarJogosCampeonato(Campeonato* c) {
+void editar_equipe() {
     system("cls");
-    printf("\nJogos do Campeonato %s (%d)\n", c->nome, c->ano);
-    printf("------------------------------------------------------------\n");
-    for (int i = 0; i < num_partidas; i++) {
-        Partida* p = &partidas[i];
-        for (int j = 0; j < c->num_equipas; j++) {
-            if (p->equipa1 == c->equipas[j] || p->equipa2 == c->equipas[j]) {
-                printf("Data: %s, Equipa 1: %s, Equipa 2: %s, Placar: %d - %d, Marcadores: %s\n",
-                       p->data, p->equipa1->nome, p->equipa2->nome, p->gols_equipa1, p->gols_equipa2, p->marcadores);
-                break;
+    char nome_equipe[50];
+    printf("Nome da equipe a editar: ");
+    fflush(stdin);
+    scanf(" %[^\n]", nome_equipe);
+    for (int i = 0; i < num_equipes; i++) {
+        if (strcmp(equipes[i].nome, nome_equipe) == 0) {
+            printf("Editar equipe:\n");
+            printf("Novo nome: ");
+            fflush(stdin);
+            scanf(" %[^\n]", equipes[i].nome);
+            printf("Nova cidade: ");
+            fflush(stdin);
+            scanf(" %[^\n]", equipes[i].cidade);
+            printf("Novo ano de fundação: ");
+            fflush(stdin);
+            scanf("%d", &equipes[i].ano_fundacao);
+            printf("Novo nome do treinador: ");
+            fflush(stdin);
+            scanf(" %[^\n]", equipes[i].treinador);
+            salvar_dados();
+            return;
+        }
+    }
+    printf("Equipe não encontrada.\n");
+}
+
+void editar_jogador() {
+    system("cls");
+    char nome_jogador[50];
+    printf("Nome do jogador a editar: ");
+    fflush(stdin);
+    scanf(" %[^\n]", nome_jogador);
+    for (int i = 0; i < num_equipes; i++) {
+        for (int j = 0; j < equipes[i].num_jogadores; j++) {
+            if (strcmp(equipes[i].jogadores[j].nome, nome_jogador) == 0) {
+                printf("Editar jogador:\n");
+                printf("Novo nome: ");
+                fflush(stdin);
+                scanf(" %[^\n]", equipes[i].jogadores[j].nome);
+                printf("Nova idade: ");
+                fflush(stdin);
+                scanf("%d", &equipes[i].jogadores[j].idade);
+                printf("Novo número da camisa: ");
+                fflush(stdin);
+                scanf("%d", &equipes[i].jogadores[j].numero_camisa);
+                printf("Nova posição: ");
+                fflush(stdin);
+                scanf(" %[^\n]", equipes[i].jogadores[j].posicao);
+                salvar_dados();
+                return;
             }
         }
     }
-    printf("------------------------------------------------------------\n");
+    printf("Jogador não encontrado.\n");
+}
+
+void editar_campeonato() {
+     system("cls");
+     char nome_campeonato[50]; 
+    printf("Nome do campeonato a editar: ");
+    fflush(stdin);
+    scanf(" %[^\n]", nome_campeonato);
+
+    for (int i = 0; i < num_campeonatos; i++) {
+        if (strcmp(campeonatos[i].nome, nome_campeonato) == 0) {
+            printf("Editar campeonato:\n");
+            printf("Novo nome: ");
+            fflush(stdin);
+            scanf(" %[^\n]", campeonatos[i].nome);
+            printf("Novo ano de realização: ");
+            fflush(stdin);
+            scanf("%d", &campeonatos[i].ano);
+
+            // Editar equipes inscritas no campeonato
+            char opcao;
+            do {
+                printf("Deseja adicionar, remover ou editar uma equipe? (a/r/e/n para nenhuma): ");
+                fflush(stdin);
+                scanf(" %c", &opcao);
+                if (opcao == 'a' || opcao == 'A') {
+                    if (campeonatos[i].num_equipes >= MAX_EQUIPES) {
+                        printf("Número máximo de equipes atingido para este campeonato.\n");
+                        continue;
+                    }
+                    char nome_equipe[50];
+                    printf("Nome da equipe a adicionar: ");
+                    fflush(stdin);
+                    scanf(" %[^\n]", nome_equipe);
+
+                    int equipe_encontrada = 0;
+                    for (int j = 0; j < num_equipes; j++) {
+                        if (strcmp(equipes[j].nome, nome_equipe) == 0) {
+                            strcpy(campeonatos[i].equipes[campeonatos[i].num_equipes], nome_equipe);
+                            campeonatos[i].num_equipes++;
+                            equipe_encontrada = 1;
+                            break;
+                        }
+                    }
+                    if (!equipe_encontrada) {
+                        printf("Equipe não encontrada.\n");
+                    }
+                } else if (opcao == 'r' || opcao == 'R') {
+                    char nome_equipe[50];
+                    printf("Nome da equipe a remover: ");
+                    fflush(stdin);
+                    scanf(" %[^\n]", nome_equipe);
+
+                    int equipe_encontrada = 0;
+                    for (int j = 0; j < campeonatos[i].num_equipes; j++) {
+                        if (strcmp(campeonatos[i].equipes[j], nome_equipe) == 0) {
+                            for (int k = j; k < campeonatos[i].num_equipes - 1; k++) {
+                                strcpy(campeonatos[i].equipes[k], campeonatos[i].equipes[k + 1]);
+                            }
+                            campeonatos[i].num_equipes--;
+                            equipe_encontrada = 1;
+                            break;
+                        }
+                    }
+                    if (!equipe_encontrada) {
+                        printf("Equipe não encontrada no campeonato.\n");
+                    }
+                } else if (opcao == 'e' || opcao == 'E') {
+                    char nome_equipe[50];
+                    printf("Nome da equipe a editar: ");
+                    fflush(stdin);
+                    scanf(" %[^\n]", nome_equipe);
+
+                    int equipe_encontrada = 0;
+                    for (int j = 0; j < campeonatos[i].num_equipes; j++) {
+                        if (strcmp(campeonatos[i].equipes[j], nome_equipe) == 0) {
+                            printf("Novo nome da equipe: ");
+                            fflush(stdin);
+                            scanf(" %[^\n]", campeonatos[i].equipes[j]);
+                            equipe_encontrada = 1;
+                            break;
+                        }
+                    }
+                    if (!equipe_encontrada) {
+                        printf("Equipe não encontrada no campeonato.\n");
+                    }
+                }
+            } while (opcao != 'n' && opcao != 'N');
+
+            salvar_dados();
+            return;
+        }
+    }
+    printf("Campeonato não encontrado.\n");
+}
+
+void mostrar_estatisticas() {
+    // system("cls"); // Removido para compatibilidade com diferentes sistemas operacionais
+    for (int i = 0; i < num_campeonatos; i++) {
+        printf("Campeonato: %s\n", campeonatos[i].nome);
+        printf("Ano: %d\n", campeonatos[i].ano);
+        printf("Equipes participantes:\n");
+        for (int j = 0; j < campeonatos[i].num_equipes; j++) {
+            printf("  %s\n", campeonatos[i].equipes[j]);
+        }
+        printf("-------------------------\n");
+    }
+}
+void listar_equipes_campeonato() {
+     system("cls"); 
+    char nome_campeonato[50];
+    printf("Nome do campeonato: ");
+    fflush(stdin);
+    scanf(" %[^\n]", nome_campeonato);
+
+    int encontrou = 0;
+    for (int i = 0; i < num_campeonatos; i++) {
+        if (strcmp(campeonatos[i].nome, nome_campeonato) == 0) {
+            printf("Campeonato: %s\n", campeonatos[i].nome);
+            printf("Ano: %d\n", campeonatos[i].ano);
+            printf("Equipes participantes:\n");
+            for (int j = 0; j < campeonatos[i].num_equipes; j++) {
+                printf("  %s\n", campeonatos[i].equipes[j]);
+            }
+            encontrou = 1;
+            break;
+        }
+    }
+
+    if (!encontrou) {
+        printf("Campeonato '%s' não encontrado.\n", nome_campeonato);
+    }
+}
+
+
+void listar_jogos_equipe() {
+    system("cls");
+    char nome_equipe[50];
+    printf("Nome da equipe: ");
+    fflush(stdin);
+    scanf(" %[^\n]", nome_equipe);
+    for (int i = 0; i < num_partidas; i++) {
+        if (strcmp(partidas[i].equipe1, nome_equipe) == 0 || strcmp(partidas[i].equipe2, nome_equipe) == 0) {
+            printf("Campeonato: %s\n", partidas[i].campeonato);
+            printf("Partida: %s vs %s\n", partidas[i].equipe1, partidas[i].equipe2);
+            printf("Placar: %d - %d\n", partidas[i].gols_equipe1, partidas[i].gols_equipe2);
+            printf("Data: %s\n", partidas[i].data);
+        }
+    }
 }
 
 int main() {
     setlocale(LC_ALL,"portuguese");
     system("cls");
-    carregarDados();
+    carregar_dados();
     int opcao;
     do {
-        printf("\nSISTEMA DE GESTÃO DA FEDERAÇÃO ANGOLANA DE FUTEBOL\n");
-        printf("1. Cadastrar Equipa\n");
+        printf("Menu Principal:\n");
+        printf("1. Cadastrar Equipe\n");
         printf("2. Cadastrar Jogador\n");
         printf("3. Cadastrar Campeonato\n");
-        printf("4. Registrar Partida\n");
-        printf("5. Editar Equipa\n");
-        printf("6. Editar Jogador\n");
-        printf("7. Exibir Tabela de Classificação\n");
-        printf("8. Pesquisar Equipa\n");
-        printf("9. Pesquisar Jogador\n");
-        printf("10. Mostrar Estatísticas\n");
-        printf("11. Listar Equipas de um Campeonato\n");
-        printf("12. Listar Jogadores de uma Equipa\n");
-        printf("13. Listar Jogos de uma Equipa\n");
-        printf("14. Listar Jogos de um Campeonato\n");
-        printf("15. Sair\n");
+        printf("4. Registrar Partida\n");    
+        printf("5. Tabela Classificativa\n");
+        printf("6. Pesquisar Equipe\n");
+        printf("7. Pesquisar Jogador\n");
+        printf("8. Pesquisar Campeonato\n");
+        printf("9. Editar Equipe\n");
+        printf("10. Editar Jogador\n");
+        printf("11. Editar Campeonato\n");
+        printf("12. Mostrar Estatísticas\n");
+        printf("13. Listar partidas\n");
+        printf("14. Listar Jogos de uma Equipe\n");
+        printf("15. Listar equipes de um campeonato\n");
+        printf("0. Sair\n");
         printf("Escolha uma opção: ");
-        scanf("%d", &opcao);
         fflush(stdin);
+        scanf("%d", &opcao);
         switch (opcao) {
             case 1:
-                cadastrarEquipa();
+                cadastrar_equipe();
                 break;
             case 2:
-                cadastrarJogador();
+                cadastrar_jogador();
                 break;
             case 3:
-                cadastrarCampeonato();
+                cadastrar_campeonato();
                 break;
             case 4:
-                registrarPartida();
-                break;
-            case 5:
-                editarEquipa();
-                break;
-            case 6:
-                editarJogador();
-                break;
-            case 7: {
-    char nome_campeonato[100];
-    printf("Nome do campeonato: ");
-    scanf("%s", nome_campeonato);
-    
-    int campeonato_index = -1;
-    for (int i = 0; i < num_campeonatos; ++i) {
-        if (strcmp(campeonatos[i].nome, nome_campeonato) == 0) {
-            campeonato_index = i;
-            break;
-        }
-    }
-    
-    if (campeonato_index == -1) {
-        printf("Campeonato inválido.\n");
-        break;
-    }
-    exibirTabelaClassificacao(&campeonatos[campeonato_index]);
-                break;
-            }
-
-
-                
-            case 8:
-                pesquisarEquipa();
-                break;
-            case 9:
-                pesquisarJogador();
-                break;
-            case 10: {
-                {
-    char nome_campeonato[100];
-    printf("Nome do campeonato: ");
-    scanf("%s", nome_campeonato);
-    
-    int campeonato_index = -1;
-    for (int i = 0; i < num_campeonatos; ++i) {
-        if (strcmp(campeonatos[i].nome, nome_campeonato) == 0) {
-            campeonato_index = i;
-            break;
-        }
-    }
-    
-    if (campeonato_index == -1) {
-        printf("Campeonato inválido.\n");
-        break;
-    }
-    mostrarEstatisticas(&campeonatos[campeonato_index]);
-                break;
-            }
-}
-
-                
-            case 11: {
-                {
-    char nome_campeonato[100];
-    printf("Nome do campeonato: ");
-    scanf("%s", nome_campeonato);
-    
-    int campeonato_index = -1;
-    for (int i = 0; i < num_campeonatos; ++i) {
-        if (strcmp(campeonatos[i].nome, nome_campeonato) == 0) {
-            campeonato_index = i;
-            break;
-        }
-    }
-    
-    if (campeonato_index == -1) {
-        printf("Campeonato inválido.\n");
-        break;
-    }
-    
-    listarEquipasCampeonato(&campeonatos[campeonato_index]);
-    break;
-    listarEquipasCampeonato(&campeonatos[campeonato_index]);
-                break;
-            }
-}
-
-                
-            case 12: {
-    char nome_equipa[100];
-    printf("Nome da equipa: ");
-    scanf("%s", nome_equipa);
-    
-    int equipa_index = -1;
-    for (int i = 0; i < num_equipas; ++i) {
-        if (strcmp(equipas[i].nome, nome_equipa) == 0) {
-            equipa_index = i;
-            break;
-        }
-    }
-    
-    if (equipa_index == -1) {
-        printf("Equipa inválida.\n");
-        break;
-    }
-    
-    listarJogadoresEquipa(&equipas[equipa_index]);
-    break;
-}
-
-            case 13: {
-    char nome_equipa[100];
-    printf("Nome da equipa: ");
-    scanf("%s", nome_equipa);
-    
-    int equipa_index = -1;
-    for (int i = 0; i < num_equipas; ++i) {
-        if (strcmp(equipas[i].nome, nome_equipa) == 0) {
-            equipa_index = i;
-            break;
-        }
-    }
-    
-    if (equipa_index == -1) {
-        printf("Equipa inválida.\n");
-        break;
-    }
-    
-    listarJogosEquipa(&equipas[equipa_index]);
-    break;
-}
-
-            case 14: {
-    char nome_campeonato[100];
-    printf("Nome do campeonato: ");
-    scanf("%s", nome_campeonato);
-    
-    int campeonato_index = -1;
-    for (int i = 0; i < num_campeonatos; ++i) {
-        if (strcmp(campeonatos[i].nome, nome_campeonato) == 0) {
-            campeonato_index = i;
-            break;
-        }
-    }
-    
-    if (campeonato_index == -1) {
-        printf("Campeonato inválido.\n");
-        break;
-    }
-    
-                listarJogosCampeonato(&campeonatos[campeonato_index]);
+                registrar_partida();
                 break;
             
-}
-
+            case 5:
+                tabela_classificativa();
+                break;
+            case 6:
+                pesquisar_equipe();
+                break;
+            case 7:
+                pesquisar_jogador();
+                break;
+            case 8:
+                pesquisar_campeonato();
+                break;
+            case 9:
+                editar_equipe();
+                break;
+            case 10:
+                editar_jogador();
+                break;
+            case 11:
+                editar_campeonato();
+                break;
+            case 12:
+                mostrar_estatisticas();
+                break;
+            case 13:
+                listar_partidas();
+                break;
+            case 14:
+                listar_jogos_equipe();
+                break;
             case 15:
+                listar_equipes_campeonato();
+                break;
+            case 0:
                 printf("Saindo...\n");
+                salvar_dados();
                 break;
             default:
                 printf("Opção inválida.\n");
         }
-    } while (opcao != 15);
-    salvarDados();
+    } while (opcao != 0);
     return 0;
 }
